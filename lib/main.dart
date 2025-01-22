@@ -21,7 +21,6 @@ class _MyAppState extends State<MyApp> {
     Home(),    
     Initial(),        
     Products(),      
-    ProductDetail(),  
   ];
 
   void _onItemTap(int index) {
@@ -36,9 +35,6 @@ class _MyAppState extends State<MyApp> {
       title: 'Ecommerce',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.red,  
-        ),
       ),
       home: Scaffold(
         appBar: AppBar(
@@ -65,10 +61,6 @@ class _MyAppState extends State<MyApp> {
             BottomNavigationBarItem(
               icon: Icon(Icons.list),
               label: 'Products',  
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile', 
             ),
           ],
         ),
