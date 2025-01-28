@@ -1,6 +1,8 @@
+import 'package:ecommerce/models/productVariant.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce/models/product.dart';
 import 'package:intl/intl.dart';
+import 'package:ecommerce/models/product.dart';
 
 class ProductDetail extends StatefulWidget {
   final Product product;
@@ -11,6 +13,16 @@ class ProductDetail extends StatefulWidget {
 }
 
 class _MyWidgetState extends State<ProductDetail> {
+  late List<bool> _selectedVariants;
+  late ProductVariant selectedVariant;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedVariants =
+        List.generate(widget.product.variants!.length, (index) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -66,11 +78,27 @@ class _MyWidgetState extends State<ProductDetail> {
                             style: const TextStyle(fontSize: 24),
                           ),
                           const Padding(
-                            padding: EdgeInsets.only(top: 8),
+                            padding: EdgeInsets.only(top: 8, bottom: 8),
                             child: Text(
                               'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
                             ),
-                          )
+                          ),
+                          ToggleButtons(
+                            isSelected: _selectedVariants,
+                            children: widget.product.variants!.map((variant) {
+                              return ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedVariant = variant;
+                                    });
+                                  },
+                                  child: Text(variant.name));
+                            }).toList(),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8, bottom: 8),
+                          ),
+                          Text('${selectedVariant.name}')
                         ],
                       ),
                     )
@@ -82,7 +110,7 @@ class _MyWidgetState extends State<ProductDetail> {
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () {
-                      Navigator.pop(context); 
+                      Navigator.pop(context);
                     },
                   ),
                 ),

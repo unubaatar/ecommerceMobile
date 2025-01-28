@@ -1,8 +1,9 @@
 import 'brand.dart';
 import 'category.dart';
+import 'productVariant.dart';
 
 class Product {
-  final String id;  
+  final String id;
   final String name;
   final bool isActive;
   final int? sellPrice;
@@ -12,6 +13,8 @@ class Product {
   final Brand? brand;
   final Category? category;
   final List? thumbnails;
+  // final List? variants;
+  final List<ProductVariant>? variants;
 
   Product({
     required this.id,
@@ -23,7 +26,8 @@ class Product {
     required this.updatedAt,
     this.brand,
     this.category,
-    this.thumbnails
+    this.thumbnails,
+    this.variants,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -35,9 +39,16 @@ class Product {
       price: json['price'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
-      brand: Brand.fromJson(json['brand']),
-      category: Category.fromJson(json['category']),
-      thumbnails: json['thumbnails']
+      brand: json['brand'] != null ? Brand.fromJson(json['brand']) : null,
+      category: json['category'] != null ? Category.fromJson(json['category']) : null,
+      thumbnails: json['thumbnails'],
+      // variants: json['variants'],
+      variants: json['variants'] != null
+          ? List<ProductVariant>.from(
+              json['variants'].map((variant) => ProductVariant.fromJson(variant)),
+            )
+          : null,
+
     );
   }
 }

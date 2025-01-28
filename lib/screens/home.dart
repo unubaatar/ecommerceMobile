@@ -93,11 +93,7 @@ class _MyWidgetState extends State<Home> {
     super.initState();
     fetchProducts();
   }
-
-  void test() {
-    print("test");
-  }
-
+  
   Future<void> fetchProducts() async {
     try {
       final url = 'http://13.231.156.66/api/products/list';
