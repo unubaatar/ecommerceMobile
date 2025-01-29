@@ -61,8 +61,7 @@ class _MyWidgetState extends State<ProductDetail> {
     super.initState();
     _selectedVariants =
         List.generate(widget.product.variants!.length, (index) => false);
-        print(widget.product.variants != null);
-    selectedVariant =  (widget.product.variants?.isNotEmpty == true && widget.product.variants != null)
+    selectedVariant =  widget.product.variants?.isNotEmpty == true 
         ? ProductVariant(
             id: widget.product.variants![0].id,
             name: widget.product.variants![0].name,
@@ -94,7 +93,7 @@ class _MyWidgetState extends State<ProductDetail> {
                     Padding(
                         padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
                         child: Center(
-                          child: (widget.product?.variants?.isNotEmpty == false || widget.product.variants == null )
+                          child: widget.product.variants?.isNotEmpty == false 
                               ? Image.network(
                                   product.thumbnails?[0],
                                   width: 300,
@@ -160,7 +159,7 @@ class _MyWidgetState extends State<ProductDetail> {
                                   _selectedVariants[i] = i == index;
                                 }
                                 selectedVariant =
-                                    widget.product?.variants![index];
+                                    widget.product.variants![index];
                               });
                             },
                             isSelected: _selectedVariants,

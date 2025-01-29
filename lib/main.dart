@@ -6,6 +6,7 @@ import 'package:ecommerce/models/cartItem.dart';
 import 'screens/home.dart';
 import 'screens/initial.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(MaterialApp(home: MyApp()));
@@ -71,6 +72,30 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> deleteCartItem(String id) async {
+    try {
+      final Uri url = Uri.parse('$baseUrl/cartItems/delete');
+      final body = {
+        '_id': id,
+      };
+      final header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_API_KEY",
+      };
+      final response =
+          await http.post(url, headers: header, body: jsonEncode(body));
+      if(response.statusCode == 200) {
+        print("Amjilttai ustgalaa");
+        await getCartItems();
+        Navigator.pop(context);
+      } else {
+        print(response.statusCode);
+      }
+    } catch(err) {
+      print(err);
+    }
+  }
+
   Future<void> login() async {
     try {
       final body = {
@@ -109,7 +134,7 @@ class _MyAppState extends State<MyApp> {
     return prefs.getString('customerId');
   }
 
-  void _showCart() async  {
+  void _showCart() async {
     await getCartItems();
     showBottomSheetCart();
   }
@@ -118,26 +143,69 @@ class _MyAppState extends State<MyApp> {
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
-          return Container(
-            width: double.infinity,
-            height: 800,
-            child:  Column(
-              children: [
-                const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Text(
-                      'Cart',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    )),
-                    Column(
-                      children: [
-                        Text('$cartItems')
-                      ],
-                    )
-              ],
-            ),
-          );
+          return SizedBox(
+              width: double.infinity,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const Padding(
+                        padding: EdgeInsets.fromLTRB(32, 8, 32, 16),
+                        child: Text(
+                          'Cart',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        )),
+                    ...cartItems.map((cartItem) {
+                      return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Image.network(
+                                cartItem.product.thumbnails![0],
+                                width: 100,
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(cartItem.product.name),
+                                  if (cartItem.variant != null)
+                                    Text(cartItem.variant!.name),
+                                  Text(
+                                    CurrencyFormatter.formatTugrik(
+                                        cartItem.price),
+                                    style: TextStyle(
+                                      decoration: cartItem.salePrice != null
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                    ),
+                                  ),
+                                  if (cartItem.salePrice != null)
+                                    Text(CurrencyFormatter.formatTugrik(
+                                        cartItem.salePrice)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  ElevatedButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                              WidgetStateProperty.all(
+                                                  Colors.red),
+                                          iconColor: WidgetStateProperty.all(
+                                              Colors.white)),
+                                      onPressed: () {
+                                        deleteCartItem(cartItem.id);
+                                      },
+                                      child: const Icon(Icons.delete))
+                                ],
+                              )
+                            ],
+                          ));
+                    })
+                  ],
+                ),
+              ));
         });
   }
 
@@ -188,7 +256,7 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          title: Text("Ecommerce"),
+          title: const Text("Ecommerce"),
           centerTitle: true,
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
@@ -218,20 +286,14 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
         ),
-        // endDrawer: Drawer(
-        //   child: Column(
-        //   children: [
-        //     const Center(
-        //       child: Text('Cart' , style: TextStyle(fontSize: 24 , fontWeight: FontWeight.bold ),),
-        //     ),
-        //     Column(
-        //       children: [
-        //         Text('$cartItems')
-        //       ],
-        //     )
-        //   ],
-        // )),
       ),
     );
+  }
+}
+
+class CurrencyFormatter {
+  static String formatTugrik(int? amount) {
+    final format = NumberFormat.simpleCurrency(locale: 'mn_MN');
+    return format.format(amount);
   }
 }
