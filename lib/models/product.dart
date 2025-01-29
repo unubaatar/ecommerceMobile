@@ -31,24 +31,47 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['_id'],
-      name: json['name'],
-      isActive: json['isActive'],
-      sellPrice: json['sellPrice'],
-      price: json['price'],
-      createdAt: json['createdAt'],
-      updatedAt: json['updatedAt'],
-      brand: json['brand'] != null ? Brand.fromJson(json['brand']) : null,
-      category: json['category'] != null ? Category.fromJson(json['category']) : null,
-      thumbnails: json['thumbnails'],
-      // variants: json['variants'],
-      variants: json['variants'] != null
-          ? List<ProductVariant>.from(
-              json['variants'].map((variant) => ProductVariant.fromJson(variant)),
-            )
-          : null,
-
-    );
+    if (json['variants'].length > 0 && json['variants'][0] is! String) {
+      return Product(
+        id: json['_id'],
+        name: json['name'],
+        isActive: json['isActive'],
+        sellPrice: json['sellPrice'],
+        price: json['price'],
+        createdAt: json['createdAt'],
+        updatedAt: json['updatedAt'],
+        brand: (json['brand'] != null && json['brand'] is! String)
+            ? Brand.fromJson(json['brand'])
+            : null,
+        category: (json['category'] != null && json['category'] is! String)
+            ? Category.fromJson(json['category'])
+            : null,
+        thumbnails: json['thumbnails'],
+        variants: (json['variants'] != null)
+            ? List<ProductVariant>.from(
+                json['variants']
+                    .map((variant) => ProductVariant.fromJson(variant)),
+              )
+            : null,
+      );
+    } else {
+      return Product(
+        id: json['_id'],
+        name: json['name'],
+        isActive: json['isActive'],
+        sellPrice: json['sellPrice'],
+        price: json['price'],
+        createdAt: json['createdAt'],
+        updatedAt: json['updatedAt'],
+        brand: (json['brand'] != null && json['brand'] is! String)
+            ? Brand.fromJson(json['brand'])
+            : null,
+        category: (json['category'] != null && json['category'] is! String)
+            ? Category.fromJson(json['category'])
+            : null,
+        thumbnails: json['thumbnails'],
+        variants: []
+      );
+    }
   }
 }

@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:ecommerce/models/productVariant.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce/models/product.dart';
 import 'package:intl/intl.dart';
-import 'package:ecommerce/models/product.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class ProductDetail extends StatefulWidget {
   final Product product;
@@ -13,14 +16,61 @@ class ProductDetail extends StatefulWidget {
 }
 
 class _MyWidgetState extends State<ProductDetail> {
+  final baseUrl = 'http://13.231.156.66/api';
   late List<bool> _selectedVariants;
-  late ProductVariant selectedVariant;
+  late ProductVariant? selectedVariant;
+
+
+  Future<String?> getCustomerId() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('customerId');
+  }
+
+
+  Future<void> addCartItem() async {
+    try {
+      String? customerId = await getCustomerId();
+      final Uri url = Uri.parse('$baseUrl/cartItems/create');
+      final body = {
+        "product": widget.product.id,
+        "variant": selectedVariant?.id,
+        "salePrice": selectedVariant != null ? selectedVariant?.sellPrice : widget.product.sellPrice,
+        "price": selectedVariant != null ? selectedVariant?.price : widget.product.price,
+        "customer": customerId,
+        "qty" : 1
+      };
+      final header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_API_KEY",
+      };
+      final response  = await http.post(url, headers: header, body: jsonEncode(body));
+      if  (response.statusCode == 201) {
+        print("Added successfully");
+        Navigator.pop(context);
+      } else {
+        print(response.statusCode);
+      }
+
+    } catch(err) {
+      print(err);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _selectedVariants =
         List.generate(widget.product.variants!.length, (index) => false);
+        print(widget.product.variants != null);
+    selectedVariant =  (widget.product.variants?.isNotEmpty == true && widget.product.variants != null)
+        ? ProductVariant(
+            id: widget.product.variants![0].id,
+            name: widget.product.variants![0].name,
+            price: widget.product.variants![0].price,
+            images: widget.product.variants![0].images,
+            sellPrice: widget.product.variants![0].sellPrice,
+          )
+        : null;
   }
 
   @override
@@ -42,14 +92,18 @@ class _MyWidgetState extends State<ProductDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
-                      child: Center(
-                        child: Image.network(
-                          product.thumbnails?[0],
-                          width: 300,
-                        ),
-                      ),
-                    ),
+                        padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+                        child: Center(
+                          child: (widget.product?.variants?.isNotEmpty == false || widget.product.variants == null )
+                              ? Image.network(
+                                  product.thumbnails?[0],
+                                  width: 300,
+                                )
+                              : Image.network(
+                                  selectedVariant?.images?[0],
+                                  width: 300,
+                                ),
+                        )),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: Column(
@@ -77,28 +131,47 @@ class _MyWidgetState extends State<ProductDetail> {
                             product.name,
                             style: const TextStyle(fontSize: 24),
                           ),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
+                            child: Text(
+                              '${selectedVariant?.name ?? '' } ',
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.grey),
+                            ),
+                          ),
                           const Padding(
-                            padding: EdgeInsets.only(top: 8, bottom: 8),
+                            padding: EdgeInsets.only(top: 8, bottom: 16),
                             child: Text(
                               'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
                             ),
                           ),
                           ToggleButtons(
+                            borderColor: Colors.transparent,
+                            borderWidth: 0,
+                            selectedBorderColor: Colors.transparent,
+                            selectedColor: Colors.white,
+                            fillColor: Colors.blue,
+                            borderRadius: BorderRadius.circular(8),
+                            onPressed: (int index) {
+                              setState(() {
+                                for (int i = 0;
+                                    i < _selectedVariants.length;
+                                    i++) {
+                                  _selectedVariants[i] = i == index;
+                                }
+                                selectedVariant =
+                                    widget.product?.variants![index];
+                              });
+                            },
                             isSelected: _selectedVariants,
                             children: widget.product.variants!.map((variant) {
-                              return ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedVariant = variant;
-                                    });
-                                  },
-                                  child: Text(variant.name));
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
+                                child: Text(variant.name),
+                              );
                             }).toList(),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8, bottom: 8),
-                          ),
-                          Text('${selectedVariant.name}')
                         ],
                       ),
                     )
@@ -129,32 +202,74 @@ class _MyWidgetState extends State<ProductDetail> {
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    children: product.sellPrice != null
-                                        ? [
-                                            Text(
-                                              CurrencyFormatter.formatTugrik(
-                                                  product.price),
-                                              style: const TextStyle(
-                                                  fontSize: 20,
-                                                  color: Colors.blueGrey,
-                                                  decoration: TextDecoration
-                                                      .lineThrough),
-                                            ),
-                                            Text(
-                                              CurrencyFormatter.formatTugrik(
-                                                  product.sellPrice),
-                                              style:
-                                                  const TextStyle(fontSize: 24),
-                                            ),
-                                          ]
-                                        : [
-                                            Text(
-                                              CurrencyFormatter.formatTugrik(
-                                                  product.price),
-                                              style:
-                                                  const TextStyle(fontSize: 24),
-                                            ),
-                                          ],
+                                    children: widget.product.variants
+                                                    ?.isEmpty ==
+                                                true ||
+                                            widget.product.variants == null
+                                        ? (product.sellPrice != null
+                                            ? [
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          product.price),
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.blueGrey,
+                                                    decoration: TextDecoration
+                                                        .lineThrough,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          product
+                                                              .sellPrice),
+                                                  style: const TextStyle(
+                                                      fontSize: 24),
+                                                ),
+                                              ]
+                                            : [
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          product.price),
+                                                  style: const TextStyle(
+                                                      fontSize: 24),
+                                                ),
+                                              ])
+                                        : (selectedVariant?.sellPrice != null
+                                            ? [
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          selectedVariant
+                                                              ?.price),
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.blueGrey,
+                                                    decoration: TextDecoration
+                                                        .lineThrough,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          selectedVariant
+                                                              ?.sellPrice),
+                                                  style: const TextStyle(
+                                                      fontSize: 24),
+                                                ),
+                                              ]
+                                            : [
+                                                Text(
+                                                  CurrencyFormatter
+                                                      .formatTugrik(
+                                                          selectedVariant
+                                                              ?.price),
+                                                  style: const TextStyle(
+                                                      fontSize: 24),
+                                                ),
+                                              ]),
                                   ),
                                 ),
                                 Expanded(
@@ -168,7 +283,9 @@ class _MyWidgetState extends State<ProductDetail> {
                                           foregroundColor:
                                               WidgetStateProperty.all(
                                                   Colors.white)),
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        addCartItem();
+                                      },
                                       child: const Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [

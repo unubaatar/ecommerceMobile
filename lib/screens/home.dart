@@ -28,6 +28,9 @@ class _MyWidgetState extends State<Home> {
             itemBuilder: (context, index) {
               return InkWell(
                   onTap: () {
+                    // print('BLABLA : ${products[index].brand}');
+                    // print('BLABLA : ${products[index].category}');
+                    print('BLABLA : ${products[index].variants}');
                     Navigator.push(context, MaterialPageRoute( builder: (context) => ProductDetail(product :products[index])));
                   },
                   child: Card(

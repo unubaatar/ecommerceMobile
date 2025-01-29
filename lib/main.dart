@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ecommerce/models/cartItem.dart';
 import 'screens/home.dart';
 import 'screens/initial.dart';
-import 'screens/products.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -23,6 +23,8 @@ class _MyAppState extends State<MyApp> {
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  List<CartItem> cartItems = [];
+
   final List<Widget> _screens = [
     Home(),
     Initial(),
@@ -31,12 +33,41 @@ class _MyAppState extends State<MyApp> {
   void _onItemTap(int index) {
     if (index == 3) {
       _showLoginDialog();
-    } else if(index == 2) {
+    } else if (index == 2) {
       _showCart();
     } else {
       setState(() {
         _currentIndex = index;
       });
+    }
+  }
+
+  Future<void> getCartItems() async {
+    try {
+      String? customerId = await getCustomerId();
+      final Uri url = Uri.parse('$baseUrl/cartItems/getByCustomer');
+      final body = {
+        'customer': customerId,
+      };
+      final header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_API_KEY",
+      };
+      final response =
+          await http.post(url, headers: header, body: jsonEncode(body));
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        setState(() {
+          cartItems = (jsonData['rows'] as List)
+              .map((eachCartItem) => CartItem.fromJson(eachCartItem))
+              .toList();
+        });
+        print(cartItems);
+      } else {
+        print(response.statusCode == 200);
+      }
+    } catch (err) {
+      print(err);
     }
   }
 
@@ -59,8 +90,7 @@ class _MyAppState extends State<MyApp> {
         saveCustomerId(customerId);
         phoneController.text = '';
         passwordController.text = '';
-        print(getCustomerId());
-        Navigator.pop(context); 
+        Navigator.pop(context);
       } else {
         print(response.statusCode);
       }
@@ -79,8 +109,36 @@ class _MyAppState extends State<MyApp> {
     return prefs.getString('customerId');
   }
 
-  void _showCart() {
-    _scaffoldKey.currentState?.openEndDrawer();
+  void _showCart() async  {
+    await getCartItems();
+    showBottomSheetCart();
+  }
+
+  void showBottomSheetCart() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            width: double.infinity,
+            height: 800,
+            child:  Column(
+              children: [
+                const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Text(
+                      'Cart',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    )),
+                    Column(
+                      children: [
+                        Text('$cartItems')
+                      ],
+                    )
+              ],
+            ),
+          );
+        });
   }
 
   void _showLoginDialog() {
@@ -158,28 +216,21 @@ class _MyAppState extends State<MyApp> {
               icon: Icon(Icons.login),
               label: 'Login',
             ),
-
           ],
         ),
-        endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: const <Widget>[
-            ListTile(
-              title: Text("Home"),
-            ),
-            ListTile(
-              title: Text("Search"),
-            ),
-            ListTile(
-              title: Text("Profile"),
-            ),
-            ListTile(
-              title: Text("Settings"),
-            ),
-          ],
-        ),
-      ),
+        // endDrawer: Drawer(
+        //   child: Column(
+        //   children: [
+        //     const Center(
+        //       child: Text('Cart' , style: TextStyle(fontSize: 24 , fontWeight: FontWeight.bold ),),
+        //     ),
+        //     Column(
+        //       children: [
+        //         Text('$cartItems')
+        //       ],
+        //     )
+        //   ],
+        // )),
       ),
     );
   }
